@@ -22,7 +22,7 @@ jobs:
           python-version: "3.11"
 
       - name: Run test suite
-        run: uv run pytest test_radar.py -q
+        run: uv run --with pytest pytest test_radar.py -q
 
       - name: Live OCDS API smoke check
         # Network-dependent; informational only. The test suite above is
