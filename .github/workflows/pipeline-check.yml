@@ -1,0 +1,39 @@
+name: pipeline-check
+
+# Daily proof-of-life for the pipeline: full test suite (hermetic, runs on
+# fixtures) plus a live smoke call against the public OCDS API. The private
+# production repo runs the real fetch->classify->digest cron; this public
+# mirror verifies the engine itself stays green.
+
+on:
+  push:
+  schedule:
+    - cron: "0 6 * * *" # 06:00 UTC daily
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+
+      - name: Run test suite
+        run: uv run pytest test_radar.py -q
+
+      - name: Live OCDS API smoke check
+        # Network-dependent; informational only. The test suite above is
+        # the required gate.
+        continue-on-error: true
+        run: |
+          uv run python - <<'PY'
+          import urllib.request, json
+          url = "https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?stages=tender&limit=1"
+          with urllib.request.urlopen(url, timeout=30) as r:
+              data = json.load(r)
+          n = len(data.get("releases", []))
+          print(f"OCDS API reachable, {n} release(s) returned")
+          PY

@@ -1,5 +1,7 @@
 # tender-radar
 
+[![pipeline-check](https://github.com/Manveen07/tender-radar-showcase/actions/workflows/pipeline-check.yml/badge.svg)](https://github.com/Manveen07/tender-radar-showcase/actions/workflows/pipeline-check.yml)
+
 Production pipeline that finds UK public-sector tenders for facilities
 firms (cleaning, security, catering, ventilation/ductwork) — including the
 ones most alert tools structurally miss — classifies them with an LLM
