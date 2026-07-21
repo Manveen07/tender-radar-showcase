@@ -1,0 +1,18 @@
+[project]
+name = "tender-radar"
+version = "0.1.0"
+description = "Tender Fit Radar — scans public tenders, classifies bid/no-bid fit for a small B2B service firm"
+requires-python = ">=3.11"
+dependencies = [
+    "google-genai>=2.8.0",
+    "instructor>=1.15.1",
+    "jsonref>=1.1.0",
+    "pydantic>=2.13.4",
+    "python-dotenv>=1.2.2",
+    "httpx>=0.28.0",
+    "pyyaml>=6.0.3",
+    "playwright>=1.61.0",
+]
+
+[tool.ruff]
+line-length = 100

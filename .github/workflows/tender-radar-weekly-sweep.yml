@@ -1,0 +1,83 @@
+name: tender-radar-weekly-sweep
+
+# Wide 60-day NATIONAL sweep, focused on the specialist HVAC/duct/extract
+# niche (the client/the specialist client's actual market: kitchen extract, fire damper,
+# ductwork, ventilation, HVAC maintenance). That work is rare and buyers
+# are anywhere, so the daily 5-day pull almost never catches it. This job
+# widens the window to 60 days once a week to surface it. The HVAC keywords
+# already live in fetch.py's ALL_KEYWORDS, and save() dedupes by id, so the
+# wide sweep just merges into the same raw store the daily job maintains --
+# no duplicate records, no separate database.
+
+on:
+  # schedule disabled in this showcase copy -- run via workflow_dispatch
+  workflow_dispatch: {}
+
+concurrency:
+  group: tender-radar-weekly-sweep
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  wide-sweep:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright chromium (for the ProContract scraper)
+        run: uv run playwright install --with-deps chromium
+
+      - name: Wide 60-day national fetch (FTS + CF + ProContract)
+        run: uv run python fetch.py --days 60
+
+      - name: Fetch ProContract eSourcing tenders
+        continue-on-error: true
+        run: uv run python fetch_procontract.py
+
+      - name: Classify new tenders
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: uv run python runner.py --all
+
+      - name: Rebuild leads database
+        run: uv run python build_leads.py
+
+      - name: Report any HVAC/duct/extract tenders found (the client niche)
+        # Prints the hvac-sector rows to the run log so the specialist niche
+        # is visible at a glance. Silent-by-default downstream: only email
+        # the client when this list is non-empty (his 2026-07-14 ask -- honest
+        # "nothing this week" beats filler).
+        run: |
+          uv run python - <<'PY'
+          import csv
+          from pathlib import Path
+          p = Path("../../out/tender-facts.csv")
+          rows = [r for r in csv.DictReader(p.open(encoding="utf-8")) if r["sector"] == "hvac"]
+          print(f"HVAC/duct/extract live tenders this sweep: {len(rows)}")
+          for r in rows:
+              print(f"  {r['deadline']} | {r['buyer'][:35]} | {r['title'][:55]} | {r['url']}")
+          PY
+
+      - name: Commit state and leads database back
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "tender-radar-bot"
+          git config user.email "noreply@github.com"
+          git add data \
+            out/tender-facts.csv \
+            out/tender-facts-unverified.csv
+          if git diff --cached --quiet; then
+            echo "no new tenders from weekly sweep"
+          else
+            git commit -m "tender-radar: weekly national sweep $(date -u +%F) [skip ci]"
+            git push
+          fi

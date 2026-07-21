@@ -1,0 +1,112 @@
+name: tender-radar-daily
+
+on:
+  # schedule disabled in this showcase copy -- run via workflow_dispatch
+  workflow_dispatch: {}
+
+concurrency:
+  group: tender-radar-daily
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-classify-digest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright chromium (for the ProContract scraper)
+        run: uv run playwright install --with-deps chromium
+
+      - name: Fetch new tenders (5-day overlap)
+        # 5 days, not 2: found 2026-07-13 that a failed run (Jul 6) plus a
+        # normal daily cadence produced a 48.4-hour gap between successful
+        # fetches -- a 48-hour window left ~24 minutes of margin against
+        # silent data loss. Raw storage is id-deduped (save() merges by id)
+        # so a wider overlap costs a few more API pages, not duplicate data.
+        run: uv run python fetch.py --days 5
+
+      - name: Fetch ProContract eSourcing tenders (the competitor moat)
+        # ProContract carries school/council tenders exempt from central
+        # FTS/CF publication -- our differentiator. NON-BLOCKING: if the
+        # portal DOM changes, it's down, or it starts blocking the runner,
+        # the scraper fails loud (raises) but `|| true` keeps the rest of
+        # the pipeline running on FTS/CF data. A missing ProContract pull is
+        # a coverage gap for one day, not a broken run. Watch the run log
+        # for "ProContract" errors if its tenders stop appearing.
+        continue-on-error: true
+        run: uv run python fetch_procontract.py
+
+      - name: Classify + write digests (dry-run, no SMTP)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: uv run python runner.py --all
+
+      - name: Write daily health summary
+        run: uv run python summary.py --out reports/daily-summary.md
+
+      - name: Rebuild leads database (verified + unverified-deadline tiers)
+        run: uv run python build_leads.py
+
+      - name: Refresh award data (competitor wins + expiring contracts)
+        # Feeds the post-mortem hook (recent-wins.csv, 90-day window) and the
+        # re-tender radar (expiring-soon.csv). NON-BLOCKING: award data going
+        # stale for a day is a marketing gap, not a broken pipeline.
+        continue-on-error: true
+        run: uv run python fetch_awards.py
+
+      - name: Render client digests (one per profile with match fields)
+        # The £49/mo deliverable. Renders to reports/digests/<profile>.txt for
+        # any profile carrying match_sectors/match_regions; profiles without
+        # them are skipped silently. Nothing is emailed from CI -- these are
+        # ready-to-send drafts a human reviews and sends.
+        continue-on-error: true
+        run: |
+          mkdir -p reports/digests
+          for p in profiles/*.yaml; do
+            name=$(basename "$p" .yaml)
+            uv run python digest_client.py "$p" --out "reports/digests/$name.txt" \
+              || echo "skipped $name (no match fields)"
+          done
+
+      - name: Upload digest HTML and health summary (survives after the run ends)
+        uses: actions/upload-artifact@v5
+        with:
+          name: tender-radar-${{ github.run_id }}
+          path: |
+            out/*.html
+            reports/daily-summary.md
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Commit state, digests, summary, and leads database back
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "tender-radar-bot"
+          git config user.email "noreply@github.com"
+          git add data reports \
+            out/tender-facts.csv \
+            out/tender-facts-unverified.csv \
+            out/recent-wins.csv \
+            out/expiring-soon.csv
+          if git diff --cached --quiet; then
+            echo "no new tenders today"
+          else
+            git commit -m "tender-radar: daily run $(date -u +%F) [skip ci]"
+            # Rebase before push: a human push landing mid-run leaves this
+            # checkout stale and the plain push gets rejected (bit us
+            # 2026-07-19). Data files are append-mostly; autostash keeps any
+            # unstaged leftovers out of the way. One retry covers a second
+            # racing push.
+            git pull --rebase --autostash origin main || true
+            git push || (git pull --rebase --autostash origin main && git push)
+          fi

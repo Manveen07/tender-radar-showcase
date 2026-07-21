@@ -1,0 +1,10 @@
+.env
+out/
+!data/golden-tenders.jsonl
+!data/tenders-fixture*.jsonl
+data/*
+!data/golden-tenders.jsonl
+!data/tenders-fixture.jsonl
+!data/tenders-fixture-multi.jsonl
+__pycache__/
+.frugal-fable/

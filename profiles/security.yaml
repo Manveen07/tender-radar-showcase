@@ -1,0 +1,23 @@
+# Second sample profile — proves the pipeline is multi-tenant. Different trade
+# (manned guarding / security services) so it exercises different certs, region,
+# and clearance logic than the cleaning profile.
+name: Ironside Security Services Ltd
+sector: Manned guarding, keyholding and mobile patrol
+region: Greater Manchester and North West England (Manchester, Salford, Stockport, Bolton)
+annual_turnover: approx £620,000
+staff_count: 22 SIA-licensed guards + 3 controllers
+certifications:
+  - ISO 9001
+  - SIA Approved Contractor Scheme (ACS)
+  - NSI Gold
+security_clearance: true
+insurance: £10m public liability, £10m employer liability
+notes: >
+  Holds SC clearance for 6 guards, enough for low-sensitivity secure sites but not
+  bulk MOD contracts requiring the whole team cleared. Does not hold BS 7858 vetting
+  for the full workforce. Cannot service contracts outside North West England.
+  Turnover floor: typically excluded from tenders demanding >£1m annual turnover.
+recipient_email: owner@ironsidesecurity.example.co.uk
+# Machine-matching fields for digest_client.py.
+match_sectors: [security]
+match_regions: [manchester, salford, stockport, bolton, chorley, home group, westmorland]

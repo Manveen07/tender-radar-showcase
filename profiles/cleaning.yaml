@@ -1,0 +1,24 @@
+# Default profile — the fake firm the golden set (data/golden-tenders.jsonl) is
+# labeled against. Keep this file's values byte-identical to what profile.py used
+# to hard-code (DEMO_CLEANING_FIRM) so `uv run python eval.py` stays green.
+name: Brightwell Commercial Cleaning Ltd
+sector: Commercial / office / school cleaning
+region: London and home counties (Greater London, Surrey, Kent, Essex, Herts)
+annual_turnover: approx £380,000 (below £500k)
+staff_count: 14 cleaners + 2 supervisors
+certifications:
+  - ISO 9001
+  - SafeContractor
+  - CHAS
+security_clearance: false
+insurance: £5m public liability, £10m employer liability
+notes: >
+  Does NOT hold ISO 14001. No security clearance, so cannot bid contracts
+  requiring SC/BPSS-cleared staff (e.g. MOD, secure custodial sites).
+  Cannot service contracts outside the London/home-counties region.
+  Turnover floor: typically excluded from tenders demanding >£500k annual turnover.
+recipient_email: owner@brightwellcleaning.example.co.uk
+# Machine-matching fields for digest_client.py (appended keys only -- the
+# original values above stay untouched for the golden-set eval).
+match_sectors: [cleaning]
+match_regions: [london, surrey, kent, essex, hertford, haringey, educo, guildford, luton, st albans]

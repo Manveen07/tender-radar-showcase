@@ -1,0 +1,6 @@
+{"id": "fixture-001", "gold": "bid", "why": "ISO 9001 + SafeContractor/CHAS all held; £150k turnover floor below firm's £380k; Camden is in region; no disqualifier."}
+{"id": "fixture-002", "gold": "skip", "why": "Mandatory ISO 14001 not held AND Greater Manchester is outside London/home-counties region."}
+{"id": "fixture-003", "gold": "skip", "why": "SC security clearance not held (mandatory) and £750k turnover floor above firm's £380k."}
+{"id": "fixture-004", "gold": "bid", "why": "SafeContractor held; Guildford/Surrey in region; SME-friendly; no cert the firm lacks."}
+{"id": "fixture-005", "gold": "skip", "why": "Grounds maintenance/landscaping, not cleaning — wrong sector, firm cannot deliver."}
+{"id": "fixture-006", "gold": "skip", "why": "In region but mandatory ISO 14001 not held — disqualified on a required cert."}
