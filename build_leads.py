@@ -286,7 +286,8 @@ def main() -> None:
     # Sort by deadline
     live.sort(key=lambda r: r.get("deadline_hint", ""))
 
-    # Write CSV
+    # Write CSV (a clean clone has no out/ yet)
+    LEADS_DIR.mkdir(parents=True, exist_ok=True)
     fieldnames = ["id", "title", "buyer", "url", "location", "deadline", "value", "sector"]
     with open(OUT, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)

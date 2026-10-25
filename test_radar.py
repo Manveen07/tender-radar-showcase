@@ -429,3 +429,26 @@ def test_awards_csv_windows(monkeypatch):
     }
     assert wins == {"fresh", "far"}
     assert expiring == {"stale"}
+
+
+def test_build_leads_creates_its_out_folder(monkeypatch):
+    """A clean clone has no out/ folder: build_leads must make it, not crash
+    on the first CSV write. (tempfile for the same reason as above.)"""
+    import tempfile
+    from pathlib import Path as _Path
+    import build_leads
+
+    tmp_path = _Path(tempfile.mkdtemp())
+    raw = tmp_path / "tenders-raw.jsonl"
+    raw.write_text("", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(build_leads, "RAW", raw)
+    monkeypatch.setattr(build_leads, "OUTPUTS", tmp_path / "tender-outputs.jsonl")
+    monkeypatch.setattr(build_leads, "LEADS_DIR", out_dir)
+    monkeypatch.setattr(build_leads, "OUT", out_dir / "tender-facts.csv")
+    monkeypatch.setattr(build_leads, "OUT_UNVERIFIED", out_dir / "tender-facts-unverified.csv")
+
+    build_leads.main()
+
+    assert (out_dir / "tender-facts.csv").exists()
+    assert (out_dir / "tender-facts-unverified.csv").exists()
