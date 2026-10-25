@@ -1,0 +1,72 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=IBM+Plex+Mono:wght@400;500&display=block" rel="stylesheet">
+<style>
+/* README picture for tender-radar-showcase, in the manveen.me look: red pen on paper.
+   Numbers: the live run saved 15 Oct 2026 (manveen.me's data/pipeline-snapshot.json).
+   Render (Windows paths): msedge --headless=new --disable-gpu --hide-scrollbars
+   --force-device-scale-factor=1 --window-size=1600,1100 --virtual-time-budget=8000
+   --screenshot=docs\tender-radar.png file:///.../docs/tender-radar.html */
+:root{--paper:#f4f1ea;--ink:#1d1d1d;--dim:#5a5750;--rule:#d9d3c5;--red:#c4161c}
+*{box-sizing:border-box;margin:0}
+body{width:1600px;height:1100px;background:var(--paper);color:var(--ink);font-family:Archivo,sans-serif;overflow:hidden;position:relative}
+.mono{font-family:"IBM Plex Mono",monospace}
+.kick{position:absolute;left:96px;top:78px;font-size:19px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+h1{position:absolute;left:92px;top:118px;font-size:112px;font-weight:900;letter-spacing:-.035em;line-height:.98}
+.note{position:absolute;color:var(--red);font-size:22px;line-height:1.35}
+.list{position:absolute;left:96px;top:520px;font-size:25px;color:#3b3934}
+.list div{height:52px;line-height:52px;white-space:nowrap}
+.flow{position:absolute;left:0;top:0}
+.list .st{position:relative;display:inline-block}
+.list .st::after{content:"";position:absolute;left:-8px;right:-10px;top:50%;height:12px;margin-top:-6px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 12' preserveAspectRatio='none'%3E%3Cpath d='M2 7 C90 4 170 9 260 6 S360 5 398 7' fill='none' stroke='%23c4161c' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat;background-size:100% 100%}
+.list div:nth-child(2) .st::after{transform:rotate(-.4deg)} .list div:nth-child(3) .st::after{transform:rotate(.5deg) scaleY(-1)}
+.list div:nth-child(4) .st::after{transform:rotate(-.25deg)} .list div:nth-child(5) .st::after{transform:rotate(.35deg) scaleY(-1)}
+.list div:nth-child(6) .st::after{transform:rotate(-.5deg)}
+
+.box{position:absolute;font-size:21px;line-height:1.35;padding:0}
+.big{font-family:Archivo;font-weight:800;font-size:34px}
+.foot{position:absolute;left:96px;bottom:40px;font-size:18px;color:var(--dim)}
+</style></head><body>
+<div class="kick mono">Running right now · Tender Radar</div>
+<h1>3,671 checks.<br>8 worth bidding on.</h1>
+<svg class="flow" width="1600" height="1200" viewBox="0 0 1600 1200" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- red underline under the second headline line -->
+  <path d="M96 352 C330 346 560 356 790 349 S1010 344 1046 350" stroke="#c4161c" stroke-width="5"/>
+  <!-- red circle round the one worth a look -->
+  <path d="M80 866 C150 834 520 832 694 850 C760 858 770 896 690 906 C520 926 170 926 96 902 C48 890 50 872 100 858" stroke="#c4161c" stroke-width="3.4"/>
+  <!-- brace and arrow from the struck list -->
+  <path d="M800 532 C820 532 814 600 824 650 C828 670 840 676 848 678 C840 680 828 686 824 706 C814 756 820 820 800 820" stroke="#c4161c" stroke-width="3"/>
+  <!-- flow sketch: sources -> script -> result -->
+  <g stroke="#1d1d1d" stroke-width="2.2">
+    <path d="M1012 520 L1258 518 L1259 566 L1013 568 Z"/>
+    <path d="M1012 600 L1258 602 L1257 650 L1012 648 Z"/>
+    <path d="M1013 682 L1259 680 L1258 728 L1012 730 Z"/>
+    <path d="M1260 543 C1300 545 1310 600 1340 618"/>
+    <path d="M1260 625 C1290 626 1310 626 1340 628"/>
+    <path d="M1260 705 C1300 704 1310 650 1340 638"/>
+    <path d="M1342 576 L1558 574 L1560 690 L1343 692 Z"/>
+    <path d="M1440 694 C1438 730 1442 766 1440 800"/>
+    <path d="M1428 786 L1440 802 L1452 786"/>
+    <path d="M1290 812 L1556 810 L1558 978 L1291 980 Z"/>
+  </g>
+</svg>
+<div class="note mono" style="left:96px;top:372px">↑ 7 trades, from cleaning and security to pest control.<br>&nbsp;&nbsp;104 mornings it has started on its own since 4 July 2026.</div>
+<div class="list mono">
+  <div><span class="st">Digester Inspection and Refurbishment Works</span></div>
+  <div><span class="st">Flatflex Waste Composition Analysis</span></div>
+  <div><span class="st">GEH flushing and chemical cleaning</span></div>
+  <div><span class="st">Cleaning services for British Embassy Zagreb</span></div>
+  <div><span class="st">Cyclical Repairs and External Decoration</span></div>
+  <div><span class="st">STDL-PROC-0118 - Suction Services</span></div>
+  <div style="color:var(--ink);font-weight:500;margin-top:8px">Cleaning Tender - Haringey Schools Oct26</div>
+</div>
+<div class="note mono" style="left:866px;top:632px">skipped,<br>the reason<br>written<br>down</div>
+<div class="note mono" style="left:104px;top:934px">↑ worth a look: right sector and region, but £2.38m<br>&nbsp;&nbsp;for 3 schools against a firm turning over £380k</div>
+<div class="box mono" style="left:1030px;top:530px">Find a Tender</div>
+<div class="box mono" style="left:1030px;top:612px">Contracts Finder</div>
+<div class="box mono" style="left:1030px;top:692px">ProContract</div>
+<div class="box mono" style="left:1362px;top:590px">my script<br><span style="color:var(--dim);font-size:17px">every morning,<br>no one presses go</span></div>
+<div class="box mono" style="left:1310px;top:828px;font-size:19px;color:var(--dim)">each notice, checked<br>for 7 trades</div>
+<div class="box" style="left:1310px;top:884px"><span class="big">64</span> <span class="mono" style="font-size:19px">worth a look</span><br><span class="big">8</span> <span class="mono" style="font-size:19px">worth bidding</span></div>
+<div class="foot mono">numbers from the live run, saved 15 Oct 2026 · firm profiles are examples</div>
+</body></html>

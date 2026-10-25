@@ -1,81 +1,58 @@
-# tender-radar
+# Tender Radar
 
-[![pipeline-check](https://github.com/Manveen07/tender-radar-showcase/actions/workflows/pipeline-check.yml/badge.svg)](https://github.com/Manveen07/tender-radar-showcase/actions/workflows/pipeline-check.yml)
+Tender Radar reads new UK public-sector contract notices every morning and tells small cleaning, security and facilities firms which ones are worth bidding on, and why.
 
-Production pipeline that finds UK public-sector tenders for facilities
-firms (cleaning, security, catering, ventilation/ductwork) — including the
-ones most alert tools structurally miss — classifies them with an LLM
-against per-client profiles, and renders ready-to-send client digests.
-Runs unattended on GitHub Actions daily.
+![Tender Radar's live run saved on 15 Oct 2026: 3,671 checks, 8 worth bidding on. Six skipped tender titles are struck out in red, and a Haringey schools cleaning tender is circled as worth a look. Notices come from Find a Tender, Contracts Finder and ProContract.](docs/tender-radar.png)
 
-Built and operated solo. This is the sanitized engine of a live service;
-client data, profiles, and outreach live in a private repo.
+Python 3.11, Gemini, Playwright, GitHub Actions. Live since 4 July 2026. This is the sanitised engine of a live service I built and run alone: client data, firm profiles and outreach live in a private repo.
 
-## Why it exists
+## What it does
 
-Under the UK Procurement Act 2023, schools and academies are exempt from
-publishing tenders on the central government portal. Their contracts appear
-only on eSourcing portals (ProContract/Due North and similar) that the
-mainstream tender-alert tools do not read. This pipeline reads both.
+- Pulls new notices from Find a Tender, Contracts Finder, Public Contracts Scotland, Sell2Wales and the ProContract portal. Some school and council tenders appear only on ProContract.
+- Checks every notice against every firm's profile (trade, region, turnover, certificates) and marks it bid, maybe or skip, with the reason written down.
+- Keeps any tender with a past or unknown deadline out of the digest with a plain code rule, whatever the model said.
+- Writes one digest per firm. A quiet week says "nothing live right now", with no filler.
+- Lists competitors' wins from the last 90 days and contracts that end within 12 months (`fetch_awards.py`).
 
-## Architecture
+A real digest from `digest.py` for the made-up sample firm in `profiles/cleaning.yaml`:
 
-```
-                 ┌─ fetch.py ────────── FTS + Contracts Finder OCDS APIs
-  daily CI ──────┼─ fetch_procontract.py  Playwright scrape of eSourcing (the moat)
-                 ├─ runner.py ────────── LLM classification per client profile
-                 ├─ build_leads.py ───── verified / unverified deadline tiers,
-                 │                       cross-source dedup, sector tagging
-                 ├─ fetch_awards.py ──── award notices → competitor wins (90d)
-                 │                       + contracts expiring within 12 months
-                 └─ digest_client.py ─── per-profile plain-text digest emails
-```
+![A digest for Brightwell Commercial Cleaning, a sample firm: one Haringey schools cleaning tender marked MAYBE, with buyer, deadline, value, the reason, and the gaps to check before bidding.](docs/digest-example.png)
 
-Key engineering decisions, all learned from production incidents:
+## How it works
 
-- **Never cite a dead tender.** Award notices are filtered from the live
-  feed; a backfill (`backfill_deadlines.py`) distinguishes a real award
-  from a live two-stage tender publishing its *estimated* award timeline —
-  the bare phrase "Award decision date" once killed a live £677k tender.
-- **Title-only sector matching with word boundaries** ("guard" must not
-  fire inside "safeguarding"; description-scans mistagged IT tenders as
-  security). A narrow description-scan exception exists for specialist
-  scope ("kitchen extract duct cleaning") buried inside broad M&E
-  contracts — phrases specific enough that they cannot false-positive.
-- **Cross-source dedup**: the same tender published on both a central feed
-  and an eSourcing portal carries different fields on each; records merge
-  on normalised title+buyer, keeping the usable deadline and the publicly
-  verifiable URL.
-- **Calibrated eval before trust**: the classifier ships with a golden set
-  (`eval.py`) — currently 100% binary accuracy, with FALSE SKIP (missed
-  contract) tracked as the expensive error class.
-- **Polite API citizenship**: paced pagination, 429 Retry-After honoured,
-  no workarounds. ToS-restricted portals get a manual watchlist instead of
-  a scraper.
-- **Honest empty states**: a client's quiet week says "nothing this week"
-  — no filler. Trust is the product.
+1. **Fetch.** `fetch.py` calls the official open-data APIs at a polite pace and waits when a site says slow down (HTTP 429). `fetch_procontract.py` reads ProContract's list pages with a headless browser.
+2. **Classify.** `runner.py` sends each notice and a firm profile from `profiles/*.yaml` to Gemini. The model must quote the tender before it gives a verdict, and may not say bid when the deadline is unclear.
+3. **Clean.** `build_leads.py` merges the same tender found on two sites, tags the trade from the title ("guard" must not match inside "safeguarding"), and splits leads by whether the deadline is confirmed.
+4. **Deliver.** `digest.py` and `digest_client.py` write each firm's digest. Nothing is emailed automatically: a person reads it first.
+5. **Schedule.** GitHub Actions starts the run every morning in the private repo. In this copy the schedule is off.
 
-## Stack
+## Results
 
-Python 3.11, httpx, Playwright, Pydantic-style structured LLM output
-(Gemini), pytest (unit + regression suite grown from real incidents),
-ruff + pre-commit, GitHub Actions (daily cron + weekly wide-window sweep),
-uv.
+From the live run saved on 15 Oct 2026 ([the snapshot behind manveen.me](https://github.com/Manveen07/portfolio/blob/master/data/pipeline-snapshot.json)):
+
+- 104 mornings it started on its own since 4 July 2026.
+- 3,671 checks (one notice against one trade's profile) across 7 trades.
+- 64 worth a look, 8 worth bidding on.
 
 ## Run it
 
 ```bash
 uv sync
-uv run python fetch.py --days 7          # central feeds
-uv run python fetch_procontract.py       # eSourcing portals (Playwright)
-uv run python build_leads.py             # tiered leads CSVs -> out/
-uv run python fetch_awards.py            # competitor wins + expiring contracts
-uv run python digest_client.py profiles/cleaning.yaml   # a client digest
-uv run pytest                            # unit + regression suite
+uv run python fetch.py --days 7                       # central feeds, no key
+uv run playwright install chromium && uv run python fetch_procontract.py
+mkdir -p out && uv run python build_leads.py          # leads CSVs in out/
+uv run python digest_client.py profiles/cleaning.yaml
+uv run python runner.py --in data/tenders-fixture.jsonl && uv run python eval.py
+uv run --with pytest pytest test_radar.py             # runs on fixtures, no key
 ```
 
-The two profiles included are demonstration firms; real client profiles
-follow the same schema (`match_sectors`, `match_regions`, contact fields).
+Only `runner.py` needs a key: `GEMINI_API_KEY` in `.env`. The two profiles here, Brightwell Commercial Cleaning and Ironside Security, are made-up sample firms.
 
-Note: a handful of tests are integration tests against fetched data — run
-a fetch first for the full suite; the pure-unit tests pass standalone.
+## Limits
+
+- The golden set has only 6 hand-labelled tenders (`data/golden-tenders.jsonl`, scored by `eval.py`). It catches a broken prompt; it can't show accuracy across thousands of notices.
+- It has failed quietly. From 21 July to 11 August 2026, three new profiles lacked required fields, every morning run crashed, and nothing alerted me.
+- The ProContract scraper reads list pages only, and stops with an error when the page layout changes.
+- Verdicts are advice. A firm still has to read the full notice before bidding.
+
+Built by [Manveen Singh](https://manveen.me)
